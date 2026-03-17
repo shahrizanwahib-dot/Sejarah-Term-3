@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slaid Interaktif & Buzzer 3D - Sejarah Mudah</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;700;800;900&display=swap');
+        
+        body { font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; user-select: none; }
+
+        /* Animasi */
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slideUp { animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 80% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        .animate-popIn { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        @keyframes explode {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-explode { animation: explode 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        @keyframes pulseGlow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(250, 204, 21, 0.8)); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 50px rgba(250, 204, 21, 1)); transform: scale(1.05); }
+        }
+        .animate-pulseGlow { animation: pulseGlow 2s infinite; }
+
+        /* Gaya Butang Buzzer 3D */
+        .buzzer-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #2a2a2a, #111);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 5px 15px rgba(255,255,255,0.1);
+            border: 8px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .real-buzzer-btn {
+            width: 230px;
+            height: 230px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #ef4444, #b91c1c);
+            box-shadow: 
+                inset 0 -15px 25px rgba(0,0,0,0.4),
+                inset 0 15px 25px rgba(255,255,255,0.5),
+                0 15px 0 #7f1d1d,
+                0 25px 25px rgba(0,0,0,0.6);
+            border: none;
+            cursor: pointer;
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .real-buzzer-btn:active, .real-buzzer-btn.pressed {
+            transform: translateY(15px);
+            box-shadow: 
+                inset 0 -10px 20px rgba(0,0,0,0.5),
+                inset 0 10px 20px rgba(255,255,255,0.4),
+                0 0 0 #7f1d1d,
+                0 10px 15px rgba(0,0,0,0.7);
+            background: radial-gradient(circle at 35% 35%, #dc2626, #991b1b);
+        }
+
+        .buzzer-text { font-size: 4rem; font-weight: 900; font-style: italic; text-shadow: 0 4px 6px rgba(0,0,0,0.4); line-height: 1; }
+        
+        /* Butang Kuiz */
+        .quiz-btn { transition: all 0.2s; background-color: #ffffff; border: 2px solid #e2e8f0; }
+        .quiz-btn:hover { border-color: #3b82f6; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1); transform: translateY(-2px); }
+        .quiz-btn.correct { background-color: #dcfce7 !important; color: #15803d !important; border-color: #22c55e !important; box-shadow: 0 0 20px rgba(34,197,94,0.3); transform: scale(1.02); }
+        .quiz-btn.wrong { background-color: #fee2e2 !important; color: #b91c1c !important; border-color: #ef4444 !important; opacity: 0.7; cursor: not-allowed; transform: scale(0.98); }
+        
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-light { background: rgba(255, 255, 255, 0.90); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); }
+        
+        /* Teks Nama Gergasi */
+        .giant-name-text { font-size: 18vw; line-height: 1; padding: 20px 0; color: #fbbf24; text-shadow: 0 15px 40px rgba(245, 158, 11, 0.9), 0 0 100px rgba(245, 158, 11, 0.5); white-space: nowrap; -webkit-text-stroke: 4px #b45309; }
+        
+        /* Custom scrollbar */
+        .scroll-hide::-webkit-scrollbar { display: none; }
+        .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 h-screen w-full flex flex-col relative selection:bg-amber-200 overflow-hidden" tabindex="0">
+
+    <!-- Skrin Pemilihan Peranan -->
+    <div id="role-screen" class="absolute inset-0 z-[100] bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6">
+        <div class="text-center mb-12 animate-slideUp">
+            <h1 class="text-6xl md:text-8xl font-black text-white mb-4 uppercase tracking-tighter">Sejarah <span class="text-amber-500">Mudah</span></h1>
+            <p class="text-slate-400 font-bold uppercase tracking-widest text-lg">Edisi Kesan Penjajahan & Penentangan</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl px-4 animate-slideUp" style="animation-delay: 0.2s">
+            <button onclick="selectRole('guru')" class="group glass p-12 rounded-[3rem] flex flex-col items-center hover:bg-white/5 transition-all">
+                <div class="w-24 h-24 bg-amber-500 text-white rounded-[2rem] flex items-center justify-center mb-6 shadow-lg shadow-amber-600/20"><i data-lucide="monitor-play" class="w-12 h-12"></i></div>
+                <h2 class="text-3xl font-black text-white mb-2 uppercase">Mod Guru</h2>
+                <p class="text-slate-400 text-center text-lg">Paparkan soalan & pantau pemenang buzzer.</p>
+            </button>
+
+            <button onclick="selectRole('pelajar')" class="group glass p-12 rounded-[3rem] flex flex-col items-center hover:bg-white/5 transition-all">
+                <div class="w-24 h-24 bg-blue-500 text-white rounded-[2rem] flex items-center justify-center mb-6 shadow-lg shadow-blue-600/20"><i data-lucide="zap" class="w-12 h-12"></i></div>
+                <h2 class="text-3xl font-black text-white mb-2 uppercase">Mod Pelajar</h2>
+                <p class="text-slate-400 text-center text-lg">Guna telefon sebagai buzzer 3D.</p>
+            </button>
+        </div>
+        
+        <div id="teacher-auth" class="hidden absolute inset-0 bg-slate-900/95 flex items-center justify-center z-[110] p-6">
+            <div class="glass p-12 rounded-[3rem] max-w-lg w-full text-center">
+                <h3 class="text-3xl font-black text-white mb-6 uppercase">Akses Guru</h3>
+                <input type="password" id="pass-input" onkeydown="if(event.key === 'Enter') checkPass()" placeholder="****" class="w-full bg-slate-950 border-2 border-slate-800 p-6 text-center text-5xl font-black rounded-2xl mb-8 text-white focus:outline-none focus:border-amber-500 tracking-[0.3em]">
+                <button onclick="checkPass()" class="w-full py-5 bg-amber-600 hover:bg-amber-500 text-white font-black text-xl rounded-2xl uppercase tracking-widest">Sahkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paparan Pelajar -->
+    <div id="student-view" class="hidden absolute inset-0 z-[90] bg-slate-950 flex-col items-center justify-center p-6 text-center">
+        <div id="student-setup" class="w-full max-w-md glass p-10 rounded-[2.5rem] animate-popIn">
+            <h2 class="text-4xl font-black mb-4 text-white uppercase">Daftar</h2>
+            <input type="text" id="stu-name" onkeydown="if(event.key === 'Enter') joinClass()" placeholder="NAMA ANDA" class="w-full p-6 bg-white/5 border-2 border-white/10 rounded-2xl mb-8 text-center text-3xl uppercase font-black text-white">
+            <button onclick="joinClass()" class="w-full py-5 bg-blue-600 text-white font-black text-2xl rounded-2xl uppercase tracking-widest">Sedia!</button>
+        </div>
+
+        <div id="student-gameplay" class="hidden w-full max-w-md flex-col items-center">
+            <div class="mb-8 w-full glass p-5 rounded-3xl flex items-center justify-center gap-4">
+                <div class="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center"><i data-lucide="user" class="w-8 h-8"></i></div>
+                <h3 id="display-stu-name" class="text-3xl font-black text-white uppercase tracking-tight">NAMA</h3>
+            </div>
+
+            <div id="pass-section" class="w-full animate-slideUp">
+                <div class="mb-8 flex flex-col items-center">
+                    <div class="w-16 h-16 border-4 border-white/10 border-t-amber-500 rounded-full animate-spin mb-4"></div>
+                    <p class="text-sm text-amber-500 font-black uppercase tracking-widest">Tunggu Kod Mengejut...</p>
+                </div>
+                <div class="glass p-8 rounded-[2rem] w-full mb-8 border border-amber-500/30">
+                    <p class="text-sm font-black text-amber-500 mb-4 uppercase tracking-widest">Taip 10 Huruf Di Sini</p>
+                    <input type="text" id="stu-pass" maxlength="10" placeholder="----------" oninput="checkPassInput()" class="w-full h-28 text-center text-5xl font-black uppercase rounded-2xl bg-white/10 text-white focus:outline-none tracking-[0.2em]">
+                </div>
+            </div>
+
+            <div id="buzzer-section" class="hidden w-full flex-col items-center animate-popIn">
+                <p class="text-red-500 font-black text-3xl mb-10 animate-pulse uppercase tracking-[0.3em]">TEKAN LAJU!</p>
+                <div class="buzzer-container">
+                    <button id="main-buzzer" onclick="hitBuzzer()" class="real-buzzer-btn">
+                        <span class="buzzer-text">BUZZ</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="result-area" class="hidden w-full flex-col items-center mt-8 animate-popIn">
+                <div id="win-msg" class="hidden flex-col items-center w-full glass p-10 rounded-[3rem] border border-emerald-500/30 text-emerald-400">
+                    <i data-lucide="award" class="w-20 h-20 mb-6"></i>
+                    <h2 class="text-4xl font-black uppercase tracking-tighter mb-2">Berjaya Masuk!</h2>
+                    <p class="font-bold text-lg uppercase">Lihat pada skrin utama sekarang.</p>
+                </div>
+                <div id="lose-msg" class="hidden flex-col items-center w-full glass p-10 rounded-[3rem] border border-white/5 opacity-70">
+                    <i data-lucide="clock" class="w-16 h-16 text-slate-500 mb-6"></i>
+                    <h2 class="text-3xl font-black text-slate-400 uppercase tracking-tighter mb-2">Terlewat!</h2>
+                    <p id="winner-name-info" class="text-blue-400 font-bold uppercase tracking-widest text-sm">RAKAN ANDA LEBIH PANTAS</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paparan Guru -->
+    <div id="teacher-view" class="hidden flex-col h-full w-full relative text-slate-900 z-10 bg-slate-50">
+        
+        <!-- Latar Belakang Sejarah -->
+        <div class="absolute inset-0 z-0 pointer-events-none opacity-[0.08]" 
+            style="background-image: url('peta-latar.jpg'); background-size: cover; background-position: center;">
+        </div>
+
+        <!-- Modal Pemenang (GERGASI) -->
+        <div id="winner-announcement-modal" class="absolute inset-0 z-[100] hidden flex-col items-center justify-center bg-slate-950/95 backdrop-blur-2xl text-white">
+            <div class="animate-explode flex flex-col items-center w-full">
+                <div class="relative w-40 h-40 mb-2 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-amber-500/30 rounded-full animate-ping"></div>
+                    <i data-lucide="crown" class="w-32 h-32 text-amber-400 animate-bounce relative z-10"></i>
+                </div>
+                <p class="text-amber-500 font-black tracking-[0.5em] uppercase mb-0 text-3xl">Paling Pantas!</p>
+                <!-- Nama Gergasi -->
+                <h2 id="giant-winner-name" class="font-black uppercase giant-name-text animate-pulseGlow">NAMA</h2>
+                
+                <button onclick="closeWinnerModal()" id="btn-modal-action" class="px-12 py-6 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-2xl rounded-full uppercase tracking-widest mt-6 flex items-center gap-4 shadow-lg shadow-emerald-600/30 border-2 border-emerald-400 transition-transform hover:scale-105">
+                    Sahkan & Berikan Jawapan <i data-lucide="check-circle" class="w-8 h-8"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal Betul & Salah -->
+        <div id="success-modal" class="absolute inset-0 z-[80] hidden flex-col items-center justify-center bg-slate-950/95 backdrop-blur-xl p-6 text-white text-center">
+            <h2 class="text-7xl md:text-8xl font-black uppercase text-amber-500 mb-10">Tepat Sekali!</h2>
+            <div class="w-full max-w-4xl aspect-video bg-black rounded-[3rem] border-8 border-white/10 overflow-hidden shadow-2xl shadow-amber-500/20">
+                <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHYzeXN3eXJzZGgzdGZndWwzZTNzZTNzZTNzZTNzZTNzZTNzZTNzZTNzJmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/l0MYt5jPR6QX5pnqM/giphy.gif" class="w-full h-full object-cover">
+            </div>
+            <button onclick="closeSuccess()" class="mt-14 px-12 py-6 text-2xl bg-amber-600 hover:bg-amber-500 text-white font-black rounded-3xl uppercase tracking-widest transition-colors flex items-center gap-4">Teruskan Sesi <i data-lucide="arrow-right" class="w-8 h-8"></i></button>
+        </div>
+
+        <div id="wrong-modal" class="absolute inset-0 z-[80] hidden flex-col items-center justify-center bg-slate-950/95 backdrop-blur-xl p-6 text-white text-center">
+            <h2 class="text-7xl md:text-8xl font-black uppercase text-red-500 mb-10">Kurang Tepat!</h2>
+            <div class="w-full max-w-4xl aspect-video bg-black rounded-[3rem] border-8 border-white/10 overflow-hidden shadow-2xl shadow-red-500/20">
+                <img src="https://media.giphy.com/media/ToMjGpx9F5ktZw8qPUQ/giphy.gif" class="w-full h-full object-cover">
+            </div>
+            <p class="text-slate-400 font-bold uppercase tracking-widest mt-10 mb-6 text-2xl">Sila beri peluang kepada pelajar lain melalui kawalan di skrin soalan.</p>
+            <button onclick="closeWrongModal()" class="px-12 py-6 text-2xl bg-slate-600 hover:bg-slate-500 text-white font-black rounded-3xl uppercase tracking-widest transition-colors flex items-center gap-4">
+                Kembali Ke Soalan <i data-lucide="arrow-left" class="w-8 h-8"></i>
+            </button>
+        </div>
+
+        <!-- Ruang Header -->
+        <div class="w-full px-8 py-5 flex justify-between items-center bg-white/70 backdrop-blur-lg border-b border-slate-200/50 z-50 shrink-0 shadow-sm">
+            <div id="dynamic-header-title" class="flex items-center gap-4 animate-slideUp"></div>
+            <div class="flex items-center gap-4">
+                <div id="api-status" class="flex items-center gap-2 text-sm font-black text-slate-500 bg-white shadow-sm px-5 py-3 rounded-full border border-slate-200">
+                    <span class="w-3 h-3 rounded-full bg-slate-400" id="api-dot"></span> <span id="api-text">SEDIA</span>
+                </div>
+                <div class="text-sm font-black bg-slate-900 px-5 py-3 rounded-full text-white tracking-widest shadow-md" id="slide-counter">0 / 0</div>
+            </div>
+        </div>
+
+        <!-- Kawasan Slaid -->
+        <div class="flex-1 relative overflow-hidden z-10 w-full flex flex-col">
+            <div id="slide-container" class="w-full h-full flex items-center justify-center p-6 md:p-10 overflow-y-auto scroll-hide"></div>
+        </div>
+
+        <!-- Ruang Footer -->
+        <div class="w-full p-6 flex justify-between items-center bg-transparent z-50 shrink-0 pointer-events-none">
+            <button onclick="changeSlide(-1)" id="btn-prev" class="pointer-events-auto p-6 rounded-3xl bg-white/90 backdrop-blur-sm text-slate-400 disabled:opacity-30 hover:bg-slate-100 transition-colors shadow-sm"><i data-lucide="chevron-left" class="w-8 h-8"></i></button>
+            <div class="flex gap-4 bg-white/80 backdrop-blur-md shadow-sm px-6 py-4 rounded-full pointer-events-auto" id="dots-container"></div>
+            <button onclick="changeSlide(1)" id="btn-next" class="pointer-events-auto p-6 rounded-3xl bg-amber-500 text-white shadow-lg hover:bg-amber-600 transition-colors"><i data-lucide="chevron-right" class="w-8 h-8"></i></button>
+        </div>
+    </div>
+
+    <!-- Firebase & Game Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, runTransaction, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        window.currentSlide = 0;
+        window.myRole = "";
+        window.myName = "";
+        window.serverCode = "";
+        window.currentWinner = "";
+        window.unsubscribeTeacher = null;
+        window.unsubscribeStudent = null;
+
+        let auth, db, appId, currentUser;
+
+        const explanationData = [
+            {
+                title: "Ekonomi Cara Baru", subtitle: "Bab 7: Kesan Pentadbiran Barat", img: "topik1-ekonomi.jpg",
+                bullets: [
+                    "British memperkenalkan sistem ekonomi moden yang berorientasikan eksport.",
+                    "Sistem baharu ini memerlukan pelaburan modal kewangan yang sangat besar.",
+                    "Penduduk tempatan sukar bersaing kerana kekurangan modal dan kepakaran.",
+                    "Penggunaan jentera moden dan teknologi barat digunakan secara meluas.",
+                    "Tenaga buruh asing dibawa masuk bagi menampung keperluan sektor ini."
+                ],
+                q: "Mengapakah penduduk tempatan menghadapi kesukaran untuk bersaing dengan syarikat British dalam sektor ekonomi moden?",
+                correct: "Kekurangan modal kewangan yang besar untuk tujuan pelaburan.",
+                wrongs: ["Masyarakat tempatan kurang berminat dalam bidang perniagaan.", "Tidak memiliki saiz kawasan tanah yang mencukupi.", "Kekurangan kemahiran dalam menggunakan mata wang barat."]
+            },
+            {
+                title: "Getah & Bijih Timah", subtitle: "Bab 7: Perkembangan Ekonomi", img: "topik2-bijih.jpg",
+                bullets: [
+                    "H.N. Ridley telah memperkenalkan teknik torehan 'tulang ikan hering'.",
+                    "Teknik ini membolehkan pokok getah ditoreh tanpa merosakkan batangnya.",
+                    "Syarikat Eropah memperkenalkan kapal korek dalam perlombongan bijih timah.",
+                    "Kapal korek membolehkan pengeluaran bijih timah secara besar-besaran.",
+                    "Pengusaha tempatan yang menggunakan kaedah mendulang mula terpinggir."
+                ],
+                q: "Apakah sumbangan utama H.N. Ridley terhadap perusahaan getah di Tanah Melayu?",
+                correct: "Memperkenalkan teknik torehan pokok getah yang efisien.",
+                wrongs: ["Membawa masuk benih getah berkualiti tinggi dari Eropah.", "Mencipta baja khas untuk menyuburkan pokok getah.", "Membina kilang pembuatan tayar kenderaan yang pertama."]
+            },
+            {
+                title: "Jalan Raya & Kereta Api", subtitle: "Bab 7: Infrastruktur", img: "topik3-keretapi.jpg",
+                bullets: [
+                    "British membina rangkaian jalan raya dan landasan kereta api yang meluas.",
+                    "Tujuan utamanya adalah untuk memudahkan sistem pengangkutan hasil bumi.",
+                    "Sumber utama seperti bijih timah dan getah diangkut terus ke pelabuhan.",
+                    "Landasan kereta api pertama dibina menghubungkan Taiping ke Port Weld.",
+                    "Infrastruktur moden ini akhirnya memberi keuntungan besar kepada penjajah."
+                ],
+                q: "Apakah tujuan utama pihak British membina landasan kereta api pada waktu tersebut?",
+                correct: "Memudahkan kelancaran pengangkutan bijih timah dan getah ke pelabuhan.",
+                wrongs: ["Memudahkan pergerakan harian masyarakat tempatan antara negeri.", "Menyediakan peluang pekerjaan baharu kepada penduduk kampung.", "Satu inisiatif menaik taraf sistem pengangkutan awam tempatan."]
+            },
+            {
+                title: "Sekolah Vernakular", subtitle: "Bab 7: Pendidikan", img: "topik4-sekolah.jpg",
+                bullets: [
+                    "Sistem pendidikan vernakular diasingkan mengikut kaum (Melayu, Cina, Tamil).",
+                    "Sekolah aliran Inggeris disediakan secara eksklusif di kawasan bandar.",
+                    "Hanya lulusan sekolah Inggeris berpeluang menjawat jawatan kerajaan.",
+                    "Pendidikan Melayu hanya memfokuskan kemahiran membaca, mengira, dan bertani.",
+                    "Sistem pemisahan ini mewujudkan jurang sosial yang besar antara kaum."
+                ],
+                q: "Apakah kesan negatif yang paling ketara hasil daripada sistem pendidikan vernakular oleh British?",
+                correct: "Mewujudkan jurang sosial serta menghalang penyatuan pelbagai kaum.",
+                wrongs: ["Melahirkan terlalu ramai golongan profesional di luar bandar.", "Peluang untuk mendapatkan pekerjaan tempatan menjadi terlalu terhad.", "Kos pembiayaan pendidikan yang menjadi sangat mahal bagi rakyat."]
+            },
+            {
+                title: "Sebab Penentangan", subtitle: "Bab 8: Tindak Balas Tempatan", img: "topik5-penentang.jpg",
+                bullets: [
+                    "Pihak British secara paksa mengambil alih kuasa Sultan dan pembesar.",
+                    "Pembesar kehilangan hak istimewa untuk mengutip cukai daripada rakyat.",
+                    "Pengenalan sistem cukai baharu (seperti cukai tanah) membebankan rakyat.",
+                    "British sering mencampuri dan tidak menghormati adat resam masyarakat tempatan.",
+                    "Tindakan para pegawai British yang angkuh dan menganggap mereka berkuasa mutlak."
+                ],
+                q: "Apakah faktor utama yang mendorong kebangkitan pemimpin tempatan menentang pentadbiran British?",
+                correct: "Campur tangan British secara langsung dalam kuasa pembesar dan adat tempatan.",
+                wrongs: ["Sumbangan kewangan dan bantuan British yang dilihat tidak mencukupi.", "Projek pembinaan jalan raya yang banyak merosakkan kawasan kampung.", "Kemasukan bekalan makanan dan pengaruh budaya asing secara mendadak."]
+            },
+            {
+                title: "Perang Naning", subtitle: "Dol Said (1831)", img: "topik6-naning.jpg",
+                bullets: [
+                    "Pihak British mendakwa secara sepihak bahawa Naning adalah sebahagian dari Melaka.",
+                    "Dol Said menolak arahan membayar cukai satu persepuluh daripada hasil pertanian.",
+                    "Dol Said berjaya memenangi siri peperangan pertama pada tahun 1831.",
+                    "Kejayaan awal ini didorong oleh taktikal perang gerila dan bantuan pihak sekutu.",
+                    "British akhirnya terpaksa membawa masuk ketumbukan tentera yang lebih besar."
+                ],
+                q: "Apakah punca rasmi yang mencetuskan penentangan Dol Said terhadap pihak British di Naning?",
+                correct: "Bantahan keras terhadap paksaan membayar cukai satu persepuluh hasil pertanian.",
+                wrongs: ["Tindakan British merampas tanah pusaka milik waris pegawai tempatan.", "Pemusnahan kawasan penanaman padi secara sengaja oleh tentera British.", "Keengganan pihak British untuk mengadakan sebarang rundingan damai."]
+            },
+            {
+                title: "Krisis Perak", subtitle: "Dato' Maharaja Lela", img: "topik7-perak.jpg",
+                bullets: [
+                    "J.W.W. Birch telah dilantik sebagai Residen British yang pertama di negeri Perak.",
+                    "Beliau bertindak agresif termasuklah membakar rumah para pembesar yang membantah.",
+                    "Birch tidak fasih berbahasa Melayu dan sering melanggar adat resam istana.",
+                    "Tindakannya menghapuskan amalan hamba abdi secara drastik mencetuskan kemarahan.",
+                    "Dato' Maharaja Lela dan pembesar lain bermuafakat menamatkan riwayat Birch di Pasir Salak."
+                ],
+                q: "Siapakah Residen British di Perak yang telah dibunuh akibat daripada tindakannya yang gagal menghormati adat masyarakat tempatan?",
+                correct: "J.W.W. Birch",
+                wrongs: ["Kapten Francis Light", "Sir Stamford Raffles", "Sir Frank Swettenham"]
+            },
+            {
+                title: "Pahlawan Iban", subtitle: "Rentap (Sarawak)", img: "topik8-rentap.jpg",
+                bullets: [
+                    "James Brooke melabelkan masyarakat Iban di kawasan Sungai Skrang sebagai gerombolan lanun.",
+                    "Tuduhan palsu ini dijadikan alasan utama oleh Brooke untuk menyerang petempatan mereka.",
+                    "Rentap bangkit menentang penjajah dan membina kubu pertahanan kuat di Bukit Sadok.",
+                    "Struktur pertahanan di Bukit Sadok sangat utuh dan sukar ditembusi oleh tentera Brooke.",
+                    "Rentap cukup terkenal dengan slogan keramatnya: 'Agi Idup, Agi Ngelaban' (Selagi hidup, selagi melawan)."
+                ],
+                q: "Apakah alasan yang digunakan oleh James Brooke untuk menjustifikasikan serangannya ke atas masyarakat Iban pimpinan Rentap?",
+                correct: "Mendakwa secara salah bahawa orang Iban merupakan sekumpulan lanun.",
+                wrongs: ["Keengganan orang Iban berkongsi kutipan hasil hutan dengan pihak pentadbir.", "Tindakan penduduk tempatan menghalang laluan kapal perdagangan di sungai.", "Tuduhan mencuri barang perhiasan dan harta benda milik pentadbiran Brooke."]
+            }
+        ];
+
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex); currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        const slidesData = [];
+
+        // 1. Slaid Intro
+        slidesData.push({
+            isQuiz: false, isTest: false,
+            headerHTML: '',
+            render: () => `<div class="text-center animate-slideUp glass-light p-16 md:p-20 rounded-[4rem]">
+                <h1 class="text-7xl md:text-9xl font-black mb-6 uppercase italic text-slate-900">Kelas <span class="text-amber-600">Sejarah</span></h1>
+                <p class="text-2xl md:text-3xl font-bold uppercase tracking-[0.5em] text-slate-500">Mudah & Interaktif</p>
+                <div class="mt-12 md:mt-16 flex justify-center"><img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(window.location.href)}" class="p-6 bg-white rounded-[2rem] shadow-2xl w-64 h-64 md:w-80 md:h-80"></div>
+                <p class="mt-8 text-lg font-black uppercase tracking-widest text-slate-500">Scan Kod QR untuk join Mod Pelajar</p>
+            </div>`
+        });
+
+        // 2. Slaid Latihan Buzzer
+        slidesData.push({
+            isQuiz: false, isTest: true,
+            headerHTML: `<span class="px-4 py-2 bg-blue-100 text-blue-700 rounded-xl font-black uppercase text-sm border border-blue-200 shadow-sm"><i data-lucide="zap" class="w-4 h-4 inline mb-0.5"></i> Latihan Buzzer</span>
+                         <h2 class="text-2xl font-black text-slate-800 uppercase tracking-wide">Uji Kepantasan</h2>`,
+            render: () => `<div class="w-full max-w-6xl animate-slideUp flex flex-col justify-center h-full" id="slide-test">
+                <div class="glass-light p-8 md:p-12 rounded-[4rem] w-full shadow-xl overflow-y-auto max-h-full scroll-hide flex flex-col">
+                    
+                    <!-- Top Actions: Butang yang Diberi Nama Lebih Jelas -->
+                    <div class="flex flex-wrap justify-center gap-4 mb-8 shrink-0">
+                        <button onclick="activateTestCode()" id="btn-jana-test" class="px-8 py-4 text-lg bg-blue-600 hover:bg-blue-500 text-white font-black rounded-full uppercase tracking-widest shadow-xl transition-all flex items-center gap-2"><i data-lucide="key" class="w-5 h-5"></i> Jana Kod Latihan</button>
+                        
+                        <!-- Butang Jana Kod Baru -->
+                        <button onclick="activateTestCode()" id="btn-jana-semula-test" class="hidden px-8 py-4 text-lg bg-amber-500 hover:bg-amber-400 text-slate-900 font-black rounded-full uppercase tracking-widest shadow-md transition-all flex items-center gap-2"><i data-lucide="refresh-cw" class="w-5 h-5"></i> Jana Kod Baru (Tukar Laluan)</button>
+                        
+                        <!-- Butang Reset (Kekalkan Kod, Buang Pemenang) -->
+                        <button onclick="resetBuzzer()" id="btn-reset-buzzer-test" class="hidden px-8 py-4 text-lg bg-blue-600 hover:bg-blue-500 text-white font-black rounded-full uppercase tracking-widest shadow-md transition-all flex items-center gap-2"><i data-lucide="unlock" class="w-5 h-5"></i> Buka Semula Buzzer (Kod Sama)</button>
+                    </div>
+
+                    <div id="active-student-info-test" class="hidden mx-auto max-w-2xl bg-gradient-to-r from-blue-600 to-blue-400 text-white p-4 rounded-2xl mb-8 font-black text-2xl uppercase text-center shadow-lg border-4 border-white/20 shrink-0">
+                        Pemenang Percubaan: <span id="answering-student-test" class="text-amber-300 ml-2 text-3xl">-</span>
+                    </div>
+
+                    <!-- Layout Kiri Kanan -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch flex-1">
+                        <div class="flex flex-col h-full w-full relative">
+                            <div id="placeholder-test" class="absolute inset-0 flex flex-col items-center justify-center p-8 bg-slate-100/50 border-4 border-dashed border-slate-300 rounded-[3rem] w-full h-full z-20">
+                                <i data-lucide="lock" class="w-16 h-16 text-slate-400 mb-4 opacity-50"></i>
+                                <p class="text-slate-500 font-bold uppercase tracking-widest text-center">Klik Jana Kod Latihan<br>di atas untuk bermula</p>
+                            </div>
+
+                            <div id="surprise-area-test" class="hidden flex-col items-center justify-center p-8 bg-slate-900 border-8 border-amber-400 rounded-[3rem] shadow-2xl relative w-full h-full overflow-hidden z-10 min-h-[250px]">
+                                <div class="absolute inset-0 bg-amber-500/10 animate-pulse"></div>
+                                <p class="text-amber-500 font-black uppercase text-lg mb-2 relative z-10 tracking-widest">KOD LATIHAN</p>
+                                <h1 id="code-text-test" class="text-5xl md:text-6xl lg:text-[4rem] xl:text-[5rem] font-black text-white tracking-[0.1em] relative z-10 break-all leading-none text-center">----------</h1>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 border border-slate-200 p-8 rounded-[3rem] text-left shadow-inner h-full flex flex-col justify-center">
+                            <p class="font-black text-slate-800 mb-6 uppercase tracking-widest text-2xl text-center border-b-2 border-slate-200 pb-4">Peringatan Penting:</p>
+                            <ul class="text-slate-700 space-y-6 text-xl lg:text-2xl font-bold">
+                                <li class="flex items-start gap-4">
+                                    <div class="bg-amber-100 p-3 rounded-2xl mt-1 shrink-0"><i data-lucide="zap" class="w-8 h-8 text-amber-600"></i></div> 
+                                    <span>Jika anda terawal tekan buzzer, anda wajib jawab.</span>
+                                </li>
+                                <li class="flex items-start gap-4">
+                                    <div class="bg-red-100 p-3 rounded-2xl mt-1 shrink-0"><i data-lucide="ban" class="w-8 h-8 text-red-600"></i></div> 
+                                    <span>Gagal jawab? Dilarang tekan buzzer pusingan ulangan.</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>`
+        });
+
+        // 3. Loop Topik & Kuiz
+        explanationData.forEach((d, i) => {
+            const topikIndex = i + 1;
+            
+            // Slaid Info
+            slidesData.push({
+                isQuiz: false, isTest: false,
+                headerHTML: `<span class="px-4 py-2 bg-slate-900 text-white rounded-xl font-black uppercase text-sm shadow-md">Topik ${topikIndex}</span>
+                             <div class="flex flex-col justify-center">
+                                 <h2 class="text-2xl font-black text-slate-800 uppercase leading-none tracking-tight">${d.title}</h2>
+                                 <span class="text-sm font-bold text-amber-600 uppercase tracking-widest">${d.subtitle}</span>
+                             </div>`,
+                render: () => `<div class="w-full max-w-[95%] h-full flex flex-col xl:flex-row gap-12 items-center animate-slideUp">
+                    <div class="flex-1 text-left glass-light p-10 md:p-14 rounded-[3rem] h-full flex flex-col justify-center overflow-y-auto scroll-hide">
+                        <div class="space-y-6">
+                            ${d.bullets.map(b => `<div class="flex gap-6 items-start bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:border-amber-200 transition-colors">
+                                <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 mt-1 shadow-sm"><i data-lucide="check" class="w-5 h-5"></i></div>
+                                <p class="font-bold text-slate-800 leading-snug text-xl md:text-[1.4rem]">${b}</p>
+                            </div>`).join('')}
+                        </div>
+                    </div>
+                    <div class="w-3/4 xl:w-[45%] h-full max-h-[70vh] flex items-center justify-center shrink-0">
+                        <img src="${d.img}" onerror="this.src='https://placehold.co/800x800/e2e8f0/475569?text=Gambar+Topik+${topikIndex}'" class="w-full h-full object-cover rounded-[3rem] shadow-2xl border-8 border-white">
+                    </div>
+                </div>`
+            });
+
+            const quizSlideIndex = slidesData.length;
+            const choices = shuffle([...d.wrongs, d.correct]);
+
+            // Slaid Kuiz
+            slidesData.push({
+                isQuiz: true, isTest: false,
+                headerHTML: `<span class="px-4 py-2 bg-red-600 text-white rounded-xl font-black uppercase text-sm shadow-md flex items-center gap-2"><i data-lucide="swords" class="w-4 h-4"></i> Cabaran ${topikIndex}</span>
+                             <h2 class="text-2xl font-black text-slate-800 uppercase tracking-wide">Uji Kefahaman</h2>`,
+                render: () => `<div class="w-full max-w-6xl animate-slideUp text-center flex flex-col justify-center h-full" id="slide-${quizSlideIndex}">
+                    
+                    <div class="glass-light p-8 md:p-12 rounded-[4rem] w-full shadow-xl overflow-y-auto max-h-full scroll-hide flex flex-col">
+                        
+                        <!-- KAWALAN GURU: JANA PASSWORD & BUKA SEMULA BUZZER -->
+                        <div class="flex flex-wrap justify-center gap-4 mb-8 shrink-0">
+                            <button onclick="activateSurpriseCode(${quizSlideIndex})" id="btn-jana-${quizSlideIndex}" class="px-8 py-4 text-lg bg-red-600 hover:bg-red-500 text-white font-black rounded-full uppercase tracking-widest shadow-xl animate-pulse transition-all flex items-center gap-2"><i data-lucide="key" class="w-5 h-5"></i> Jana Kod Password</button>
+                            
+                            <!-- Tukar Kod -->
+                            <button onclick="activateSurpriseCode(${quizSlideIndex}, true)" id="btn-jana-baru-${quizSlideIndex}" class="hidden px-8 py-4 text-lg bg-amber-500 hover:bg-amber-400 text-slate-900 font-black rounded-full uppercase tracking-widest shadow-md transition-all flex items-center gap-2"><i data-lucide="refresh-cw" class="w-5 h-5"></i> Jana Kod Baru (Tukar Laluan)</button>
+                            
+                            <!-- Buka Semula Buzzer (Reset) -->
+                            <button onclick="resetBuzzer()" id="btn-reset-buzzer-${quizSlideIndex}" class="hidden px-8 py-4 text-lg bg-blue-600 hover:bg-blue-500 text-white font-black rounded-full uppercase tracking-widest shadow-md transition-all flex items-center gap-2"><i data-lucide="unlock" class="w-5 h-5"></i> Buka Semula Buzzer (Kod Sama)</button>
+                        </div>
+                        
+                        <!-- INFO PELAJAR MENJAWAB -->
+                        <div id="active-student-info-${quizSlideIndex}" class="hidden mx-auto max-w-2xl bg-gradient-to-r from-emerald-600 to-emerald-400 text-white p-4 rounded-2xl mb-8 font-black text-2xl uppercase text-center shadow-lg border-4 border-white/20 shrink-0">
+                            Menjawab Sekarang: <span id="answering-student-${quizSlideIndex}" class="text-yellow-300 ml-2 text-4xl animate-pulse">-</span>
+                        </div>
+
+                        <div id="surprise-area-${quizSlideIndex}" class="hidden flex-col items-center justify-center p-8 bg-slate-900 border-8 border-amber-400 rounded-[3rem] mb-10 shadow-2xl relative overflow-hidden shrink-0">
+                            <div class="absolute inset-0 bg-amber-500/10 animate-pulse"></div>
+                            <p class="text-amber-500 font-black uppercase text-xl mb-2 relative z-10 tracking-widest">Kod Laluan Buzzer</p>
+                            <h1 id="code-text-${quizSlideIndex}" class="text-5xl md:text-6xl lg:text-[5rem] font-black text-white tracking-[0.2em] relative z-10 break-all leading-none">----------</h1>
+                        </div>
+
+                        <div class="flex-1 flex flex-col justify-center">
+                            <h2 class="text-3xl md:text-[2.5rem] font-black mb-8 text-slate-900 leading-snug">${d.q}</h2>
+                            
+                            <div id="wait-ui-${quizSlideIndex}" class="p-6 mb-8 bg-amber-50 border-2 border-dashed border-amber-300 rounded-[2rem] text-amber-700 font-black uppercase text-lg md:text-xl tracking-widest shadow-inner inline-block mx-auto">
+                                <i data-lucide="eye" class="w-8 h-8 inline mb-2 mr-3"></i> Pelajar: Sila baca & sedia sebelum kod dijana!
+                            </div>
+
+                            <div id="options-area-${quizSlideIndex}" class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full shrink-0">
+                                ${choices.map(ans => `<button onclick="checkAnswer(this, ${ans === d.correct})" class="quiz-btn p-6 lg:p-8 rounded-[2rem] text-left font-bold text-slate-800 text-lg md:text-xl shadow-md hover:bg-slate-50 leading-snug">${ans}</button>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>`
+            });
+        });
+
+        window.totalSlides = slidesData.length;
+
+        async function startApp() {
+            lucide.createIcons();
+            try {
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "" };
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'sejarah-mudah-neo';
+
+                const initAuth = async () => {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                };
+                await initAuth();
+
+                onAuthStateChanged(auth, (user) => {
+                    currentUser = user;
+                    if(user) {
+                        const apiDot = document.getElementById('api-dot');
+                        const apiText = document.getElementById('api-text');
+                        if(apiDot) apiDot.classList.replace('bg-slate-400', 'bg-emerald-500');
+                        if(apiText) apiText.innerText = "ONLINE";
+                    }
+                });
+            } catch (err) { console.error("Firebase Error:", err); }
+        }
+
+        window.selectRole = function(role) {
+            window.myRole = role;
+            if(role === 'guru') {
+                document.getElementById('teacher-auth').classList.remove('hidden');
+                document.getElementById('pass-input').focus();
+            } else {
+                document.getElementById('role-screen').classList.add('hidden');
+                document.getElementById('student-view').classList.remove('hidden');
+                document.getElementById('student-view').classList.add('flex');
+            }
+        };
+
+        window.checkPass = function() {
+            if(document.getElementById('pass-input').value === '0506') {
+                document.getElementById('role-screen').classList.add('hidden');
+                document.getElementById('teacher-view').classList.remove('hidden');
+                document.getElementById('teacher-view').classList.add('flex');
+                initSlides();
+            }
+        };
+
+        function initSlides() {
+            const container = document.getElementById('dots-container');
+            if(container) {
+                container.innerHTML = slidesData.map((_, i) => `<div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full transition-all ${i === 0 ? 'bg-slate-900 w-6 md:w-8' : 'bg-slate-300'}"></div>`).join('');
+            }
+            renderSlide();
+        }
+
+        function renderSlide() {
+            const currentData = slidesData[window.currentSlide];
+            window.currentWinner = "";
+
+            const container = document.getElementById('slide-container');
+            if(container) {
+                container.innerHTML = currentData.render();
+            }
+
+            const headerTitle = document.getElementById('dynamic-header-title');
+            if(headerTitle) {
+                if (currentData.headerHTML) {
+                    headerTitle.innerHTML = currentData.headerHTML;
+                    headerTitle.style.display = 'flex';
+                } else {
+                    headerTitle.style.display = 'none';
+                }
+            }
+            
+            lucide.createIcons();
+            
+            const dots = document.getElementById('dots-container');
+            if(dots) {
+                Array.from(dots.children).forEach((d, i) => d.className = `w-2.5 h-2.5 md:w-3 md:h-3 rounded-full transition-all ${i === window.currentSlide ? 'bg-slate-900 w-6 md:w-8' : 'bg-slate-300'}`);
+            }
+
+            const counter = document.getElementById('slide-counter');
+            if(counter) counter.innerText = `${window.currentSlide + 1} / ${window.totalSlides}`;
+            
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            if(btnPrev) btnPrev.disabled = window.currentSlide === 0;
+            if(btnNext) btnNext.disabled = window.currentSlide === window.totalSlides - 1;
+
+            if (window.unsubscribeTeacher) { window.unsubscribeTeacher(); window.unsubscribeTeacher = null; }
+        }
+
+        window.changeSlide = (dir) => { 
+            const nextSlide = window.currentSlide + dir;
+            if (nextSlide >= 0 && nextSlide < window.totalSlides) {
+                window.currentSlide = nextSlide;
+                renderSlide(); 
+            }
+        };
+
+        window.activateTestCode = function(isNew = false) { activateSurpriseCode('test', isNew); }
+        
+        window.activateSurpriseCode = function(idx, isNew = false) {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+            let code = '';
+            for(let i=0; i<10; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+            
+            const btnJana = document.getElementById(`btn-jana-${idx}`);
+            if(btnJana) btnJana.style.display = 'none';
+
+            const btnJanaBaru = document.getElementById(`btn-jana-baru-${idx}`);
+            if(btnJanaBaru) { btnJanaBaru.classList.remove('hidden'); btnJanaBaru.classList.add('flex'); }
+
+            const btnReset = document.getElementById(`btn-reset-buzzer-${idx}`);
+            if(btnReset) { btnReset.classList.remove('hidden'); btnReset.classList.add('flex'); }
+
+            const codeText = document.getElementById(`code-text-${idx}`);
+            if(codeText) codeText.innerText = code;
+
+            const surpriseArea = document.getElementById(`surprise-area-${idx}`);
+            if(surpriseArea) {
+                surpriseArea.classList.remove('hidden');
+                surpriseArea.classList.add('flex');
+            }
+
+            const waitUi = document.getElementById(`wait-ui-${idx}`);
+            if(waitUi) waitUi.style.display = 'none';
+
+            if(idx === 'test') {
+                const placeholder = document.getElementById('placeholder-test');
+                if(placeholder) placeholder.style.display = 'none';
+            }
+
+            const activeInfo = document.getElementById(`active-student-info-${idx}`);
+            if(activeInfo) activeInfo.classList.add('hidden');
+            window.currentWinner = "";
+
+            startTeacherSession(code, idx);
+        };
+
+        async function startTeacherSession(code, idx) {
+            if (!currentUser) return;
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'hall_sessions', code);
+            
+            await setDoc(docRef, { winner: "", code: code, timestamp: Date.now() });
+            window.serverCode = code;
+
+            window.unsubscribeTeacher = onSnapshot(docRef, (snap) => {
+                if (snap.exists() && snap.data().winner) {
+                    window.currentWinner = snap.data().winner;
+                    showWinner(window.currentWinner, idx);
+                }
+            });
+        }
+
+        // FUNGSI PAPARKAN PEMENANG GERGASI
+        function showWinner(name, idx) {
+            const modal = document.getElementById('winner-announcement-modal');
+            const giantName = document.getElementById('giant-winner-name');
+            const btnAction = document.getElementById('btn-modal-action');
+            
+            if(modal && giantName) {
+                giantName.innerText = name;
+                
+                const isCurrentSlideTest = slidesData[window.currentSlide]?.isTest;
+                if(isCurrentSlideTest) {
+                    btnAction.innerHTML = `Tutup Latihan Ini <i data-lucide="x-circle" class="w-8 h-8"></i>`;
+                    btnAction.className = "px-12 py-6 text-2xl bg-blue-600 hover:bg-blue-500 text-white font-black rounded-full uppercase tracking-widest mt-10 flex items-center gap-4 shadow-xl";
+                } else {
+                    btnAction.innerHTML = `Sahkan & Berikan Jawapan <i data-lucide="check-circle" class="w-8 h-8"></i>`;
+                    btnAction.className = "px-12 py-6 text-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-full uppercase tracking-widest mt-10 flex items-center gap-4 shadow-xl shadow-emerald-600/30 border-2 border-emerald-400";
+                }
+                
+                lucide.createIcons();
+                modal.style.display = 'flex';
+            }
+        }
+
+        window.closeWinnerModal = () => {
+            const modal = document.getElementById('winner-announcement-modal');
+            if(modal) modal.style.display = 'none';
+            
+            const isTest = slidesData[window.currentSlide]?.isTest;
+            const idx = isTest ? 'test' : window.currentSlide;
+            
+            const activeInfo = document.getElementById(`active-student-info-${idx}`);
+            const answeringStudent = document.getElementById(`answering-student-${idx}`);
+            
+            if(activeInfo && answeringStudent && window.currentWinner) {
+                answeringStudent.innerText = window.currentWinner;
+                activeInfo.classList.remove('hidden');
+            }
+        };
+
+        window.checkAnswer = (btn, isCorrect) => {
+            if(!window.serverCode) return;
+
+            if (isCorrect) {
+                btn.classList.add('correct');
+                setTimeout(() => {
+                    const successModal = document.getElementById('success-modal');
+                    if(successModal) successModal.style.display = 'flex';
+                }, 500);
+            } else {
+                btn.classList.add('wrong');
+                setTimeout(showWrong, 500);
+            }
+        };
+
+        window.closeSuccess = () => {
+            const successModal = document.getElementById('success-modal');
+            if(successModal) successModal.style.display = 'none';
+            changeSlide(1); 
+        };
+
+        function showWrong() {
+            const wrongModal = document.getElementById('wrong-modal');
+            if(wrongModal) wrongModal.style.display = 'flex';
+        }
+
+        window.closeWrongModal = () => {
+            const wrongModal = document.getElementById('wrong-modal');
+            if(wrongModal) wrongModal.style.display = 'none';
+        }
+
+        // FUNGSI BUKA SEMULA BUZZER (TUKAR NAMA DARI PILIH PELAJAR BARU)
+        window.resetBuzzer = async () => {
+            const wrongModal = document.getElementById('wrong-modal');
+            if(wrongModal) wrongModal.style.display = 'none';
+            
+            const isTest = slidesData[window.currentSlide]?.isTest;
+            const idx = isTest ? 'test' : window.currentSlide;
+            
+            const activeInfo = document.getElementById(`active-student-info-${idx}`);
+            if(activeInfo) activeInfo.classList.add('hidden');
+            
+            // Beri visual feedback kepada Cikgu bahawa buzzer dah dibuka
+            const btnReset = document.getElementById(`btn-reset-buzzer-${idx}`);
+            if(btnReset) {
+                const originalHTML = btnReset.innerHTML;
+                btnReset.innerHTML = `<i data-lucide="check" class="w-5 h-5"></i> Laluan Dibuka!`;
+                btnReset.classList.replace('bg-blue-600', 'bg-emerald-600');
+                btnReset.classList.replace('hover:bg-blue-500', 'hover:bg-emerald-500');
+                lucide.createIcons();
+                
+                setTimeout(() => {
+                    btnReset.innerHTML = originalHTML;
+                    btnReset.classList.replace('bg-emerald-600', 'bg-blue-600');
+                    btnReset.classList.replace('hover:bg-emerald-500', 'hover:bg-blue-500');
+                    lucide.createIcons();
+                }, 2000);
+            }
+
+            window.currentWinner = "";
+
+            if (!currentUser || !window.serverCode) return;
+            // Ini akan clear nama kat Firebase, membolehkan budak tekan main-buzzer semula
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'hall_sessions', window.serverCode);
+            await updateDoc(docRef, { winner: "" });
+        };
+
+        window.joinClass = function() {
+            const name = document.getElementById('stu-name').value.trim();
+            if (!name) return;
+            window.myName = name.toUpperCase();
+            
+            const displayId = document.getElementById('display-stu-name');
+            if(displayId) displayId.innerText = window.myName;
+
+            document.getElementById('student-setup').classList.add('hidden');
+            const gameplay = document.getElementById('student-gameplay');
+            gameplay.classList.remove('hidden');
+            gameplay.classList.add('flex');
+            
+            setTimeout(() => document.getElementById('stu-pass').focus(), 100);
+        };
+
+        window.checkPassInput = function() {
+            const input = document.getElementById('stu-pass').value.trim().toUpperCase();
+            if (input.length === 10) startStudentListener(input);
+        };
+
+        function startStudentListener(code) {
+            if (!currentUser) return;
+            if (window.unsubscribeStudent) window.unsubscribeStudent();
+            
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'hall_sessions', code);
+            window.serverCode = code;
+
+            window.unsubscribeStudent = onSnapshot(docRef, (snap) => {
+                if (!snap.exists()) { setStuUI('pass-section'); return; }
+                const data = snap.data();
+                if (data.winner) {
+                    setStuUI('result-area');
+                    const winMsg = document.getElementById('win-msg');
+                    const loseMsg = document.getElementById('lose-msg');
+                    const winnerInfo = document.getElementById('winner-name-info');
+
+                    if (data.winner === window.myName) {
+                        winMsg.classList.remove('hidden');
+                        winMsg.classList.add('flex');
+                        loseMsg.classList.add('hidden');
+                    } else {
+                        loseMsg.classList.remove('hidden');
+                        loseMsg.classList.add('flex');
+                        winMsg.classList.add('hidden');
+                        winnerInfo.innerText = `${data.winner} LEBIH LAJU`;
+                    }
+                } else {
+                    setStuUI('buzzer-section');
+                    document.getElementById('stu-pass').blur();
+                }
+            });
+        }
+
+        // FUNGSI BUZZER YANG STRICT (Paling pantas je lekat)
+        window.hitBuzzer = async function() {
+            if (!currentUser || !window.serverCode) return;
+            
+            // Visual feedback local untuk budak tu perasan dia tekan
+            const btn = document.getElementById('main-buzzer');
+            if(btn) btn.classList.add('pressed');
+            setTimeout(() => { if(btn) btn.classList.remove('pressed'); }, 150);
+
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'hall_sessions', window.serverCode);
+            try {
+                // runTransaction ini jaminan 100% dari server Firebase
+                // Hanya orang PERTAMA yang tulis kat "winner: ''" akan berjaya
+                await runTransaction(db, async (transaction) => {
+                    const snap = await transaction.get(docRef);
+                    if (snap.exists() && snap.data().winner === "") {
+                        transaction.update(docRef, { winner: window.myName });
+                    }
+                });
+            } catch (e) { console.error("Buzzer error:", e); }
+        };
+
+        function setStuUI(id) {
+            ['pass-section', 'buzzer-section', 'result-area'].forEach(s => {
+                const el = document.getElementById(s);
+                if(el) { el.classList.add('hidden'); el.classList.remove('flex'); }
+            });
+            const target = document.getElementById(id);
+            if(target) { target.classList.remove('hidden'); target.classList.add('flex'); }
+            lucide.createIcons();
+        }
+
+        // --- KEYBOARD LISTENER ---
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            if (e.key.toLowerCase() === 'f') {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.log(`Bukan error besar bro: ${err.message}`);
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            }
+
+            const teacherView = document.getElementById('teacher-view');
+            if (window.myRole === 'guru' && teacherView && !teacherView.classList.contains('hidden')) {
+                const winModal = document.getElementById('winner-announcement-modal').style.display;
+                const sucModal = document.getElementById('success-modal').style.display;
+                const wrgModal = document.getElementById('wrong-modal').style.display;
+                
+                if (winModal === 'flex' || sucModal === 'flex' || wrgModal === 'flex') return;
+
+                if (e.key === 'ArrowRight' && window.currentSlide < window.totalSlides - 1) {
+                    changeSlide(1);
+                } else if (e.key === 'ArrowLeft' && window.currentSlide > 0) {
+                    changeSlide(-1);
+                }
+            }
+        });
+
+        window.onload = startApp;
+    </script>
+</body>
+</html>
